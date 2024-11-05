@@ -15,10 +15,17 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 const FormSchema = z.object({
   name: z.string().min(2, {
     message: "Name must be at least 2 characters.",
+  }),
+  email: z.string().email({
+    message: "Please enter a valid email address.",
+  }),
+  comments: z.string().min(10, {
+    message: "Comments must be at least 10 characters.",
   }),
 });
 
@@ -27,18 +34,31 @@ export function InputForm() {
     resolver: zodResolver(FormSchema),
     defaultValues: {
       name: "",
+      email: "",
+      comments: "",
     },
   });
 
-  function onSubmit(data: z.infer<typeof FormSchema>) {
-    toast(
-      <div>
-        <div>You submitted the following values:</div>
-        <pre className="mt-2 w-full rounded-md p-2 bg-foreground text-background">
-          {JSON.stringify(data, null, 2)}
-        </pre>
-      </div>
-    );
+  async function onSubmit(data: z.infer<typeof FormSchema>) {
+    try {
+      // Send form data to API endpoint
+      const response = await fetch("/api/post", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to submit form");
+      }
+
+      toast("Form submitted successfully!");
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      toast("Failed to submit form");
+    }
   }
 
   return (
@@ -57,6 +77,37 @@ export function InputForm() {
             </FormItem>
           )}
         />
+
+        {/* Email Field */}
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input placeholder="JohnDoe@example.com" type="email" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Comments Field */}
+        <FormField
+          control={form.control}
+          name="comments"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Comments</FormLabel>
+              <FormControl>
+                <Textarea placeholder="Your message here..." {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <Button type="submit">Submit</Button>
       </form>
     </Form>
